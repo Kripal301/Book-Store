@@ -1,4 +1,7 @@
+// src/pages/HomePage.tsx
 import React from "react";
+import { Navbar } from '../components/Navbar';
+
 const HomePage = () => {
   // Mock book data — replace with real data later
   const mockBooks = [
@@ -34,7 +37,29 @@ const HomePage = () => {
       rating: 4.7,
       imageLink: "https://m.media-amazon.com/images/S/compressed.photo.goodreads.com/books/1764703833i/54493401.jpg",
     },
+    {
+      id: "5",
+      title: "The Psychology of Money",
+      author: "Morgan Housel",
+      price: 13.99,
+      rating: 4.9,
+      imageLink: "https://m.media-amazon.com/images/I/71G7BkqK2RL._AC_UF1000,1000_QL80_.jpg",
+    },
+    {
+      id: "6",
+      title: "Sapiens",
+      author: "Yuval Noah Harari",
+      price: 15.49,
+      rating: 4.7,
+      imageLink: "https://m.media-amazon.com/images/I/71Z7Kt6X3CL._AC_UF1000,1000_QL80_.jpg",
+    },
   ];
+
+  const newBooks = mockBooks.slice(0, 4);
+
+  const featuredBooks = [...mockBooks]
+    .sort((a, b) => b.rating - a.rating)
+    .slice(0, 4);
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -42,7 +67,7 @@ const HomePage = () => {
       <section className="bg-gradient-to-r from-indigo-600 to-purple-600 text-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20">
           <div className="text-center">
-            <h1 className="text-4xl md:text-6xl mb-4">Welcome to BookStore</h1>
+            <h1 className="text-4xl md:text-6xl mb-4">Welcome to BookMart</h1>
             <p className="text-xl mb-8 text-indigo-100">
               Discover your next favorite book from our curated collection
             </p>
@@ -70,48 +95,33 @@ const HomePage = () => {
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-            {mockBooks.map((book) => (
-              <div
-                key={book.id}
-                className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow flex flex-col"
-              >
-                {/* Book Image */}
-                <div className="h-64 overflow-hidden">
-                  <img
-                    src={book.imageLink}
-                    alt={book.title}
-                    className="w-full h-full object-cover"
-                  />
-                </div>
-
-                {/* Book Info */}
-                <div className="p-4 flex-grow flex flex-col">
-                  <h3 className="font-bold text-lg text-gray-900 line-clamp-1">
-                    {book.title}
-                  </h3>
-                  <p className="text-gray-600 text-sm mt-1">{book.author}</p>
-                  <div className="mt-2 flex justify-between items-center">
-                    <span className="text-indigo-600 font-semibold">
-                      ${book.price}
-                    </span>
-                    <span className="text-yellow-500">★ {book.rating}</span>
-                  </div>
-
-                  {/* Spacer to push button to bottom */}
-                  <div className="flex-grow"></div>
-
-                  <button
-                    onClick={() => alert(`View details for ${book.title}`)}
-                    className="mt-3 w-full py-1 bg-indigo-100 text-indigo-700 rounded text-sm hover:bg-indigo-200 transition-colors"
-                  >
-                    View Details
-                  </button>
-                </div>
-              </div>
+            {newBooks.map((book) => (
+              <BookCard key={book.id} book={book} />
             ))}
           </div>
         </div>
       </section>
+
+      {/* Featured Books */}
+      {/* <section className="py-16 bg-white">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex items-center justify-between mb-8">
+            <h2 className="text-3xl text-gray-900">Featured Books</h2>
+            <button
+              onClick={() => alert("View All Featured clicked!")}
+              className="text-indigo-600 hover:text-indigo-700"
+            >
+              View All →
+            </button>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+            {featuredBooks.map((book) => (
+              <BookCard key={book.id} book={book} />
+            ))}
+          </div>
+        </div>
+      </section> */}
 
       {/* CTA Section */}
       <section className="py-16 bg-gradient-to-r from-indigo-600 to-purple-600 text-white">
@@ -128,6 +138,40 @@ const HomePage = () => {
           </button>
         </div>
       </section>
+    </div>
+  );
+};
+
+// ✅ Extract BookCard into a reusable component
+const BookCard = ({ book }: { book: any }) => {
+  return (
+    <div className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow flex flex-col">
+      <div className="h-64 overflow-hidden">
+        <img
+          src={book.imageLink}
+          alt={book.title}
+          className="w-full h-full object-cover"
+          onError={(e) => {
+            (e.currentTarget as HTMLImageElement).src =
+              "https://placehold.co/300x400/efefef/999?text=No+Image";
+          }}
+        />
+      </div>
+      <div className="p-4 flex-grow flex flex-col">
+        <h3 className="font-bold text-lg text-gray-900 line-clamp-1">{book.title}</h3>
+        <p className="text-gray-600 text-sm mt-1">{book.author}</p>
+        <div className="mt-2 flex justify-between items-center">
+          <span className="text-indigo-600 font-semibold">${book.price}</span>
+          <span className="text-yellow-500">★ {book.rating}</span>
+        </div>
+        <div className="flex-grow"></div>
+        <button
+          onClick={() => alert(`View details for ${book.title}`)}
+          className="mt-3 w-full py-1 bg-indigo-100 text-indigo-700 rounded text-sm hover:bg-indigo-200 transition-colors"
+        >
+          View Details
+        </button>
+      </div>
     </div>
   );
 };
