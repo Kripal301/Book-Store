@@ -1,8 +1,8 @@
 // src/components/Navbar.tsx
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useMemo } from 'react';
 import { ShoppingCart, Heart, BookOpen, Search, Menu, X } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
-import { mockBooks } from '../data/mockData';
+import { useNavigate, useLocation } from 'react-router-dom';
+import { mockBooks } from '../data/mockData'; // ✅ Correct: mockData.ts
 
 interface NavbarProps {
   searchQuery: string;
@@ -11,58 +11,75 @@ interface NavbarProps {
 
 export const Navbar: React.FC<NavbarProps> = ({ searchQuery, onSearchChange }) => {
   const navigate = useNavigate();
+  const location = useLocation();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [showSuggestions, setShowSuggestions] = useState(false);
-  const searchRef = useRef<HTMLDivElement>(null);
 
-  // Mock data (replace with real context later)
+  const desktopDropdownRef = useRef<HTMLDivElement>(null);
+  const mobileDropdownRef = useRef<HTMLDivElement>(null);
+
+  // Mock cart/wishlist (replace with real context later)
   const cart = [];
   const wishlist = [];
   const cartCount = cart.length;
   const wishlistCount = wishlist.length;
 
-  // Filter suggestions
-  const suggestions = React.useMemo(() => {
+  // Search by title, author, AND category (all exist in your mockBooks)
+  const suggestions = useMemo(() => {
     if (!searchQuery.trim()) return [];
+    const query = searchQuery.toLowerCase();
     return mockBooks
       .filter(
         (book) =>
-          book.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-          book.author.toLowerCase().includes(searchQuery.toLowerCase())
+          book.title.toLowerCase().includes(query) ||
+          book.author.toLowerCase().includes(query) ||
+          book.category.toLowerCase().includes(query)
       )
       .slice(0, 5);
   }, [searchQuery]);
 
-  // Handle clicks outside to close dropdown
+  // Close dropdown when clicking outside both desktop & mobile
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
-      if (searchRef.current && !searchRef.current.contains(e.target as Node)) {
+      const target = e.target as Node;
+      const outsideDesktop = desktopDropdownRef.current && !desktopDropdownRef.current.contains(target);
+      const outsideMobile = mobileDropdownRef.current && !mobileDropdownRef.current.contains(target);
+
+      if (outsideDesktop && outsideMobile) {
         setShowSuggestions(false);
       }
     };
 
     document.addEventListener('mousedown', handleClickOutside);
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
-    };
+    return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  const handleNavigate = (path: string) => {
+  const shouldShowSuggestions = location.pathname === '/' && searchQuery.trim() !== '' && suggestions.length > 0;
+
+  const handleNavigate = (path: string, id?: string) => {
     setMobileMenuOpen(false);
     setShowSuggestions(false);
-    navigate(path);
+    if (id) {
+      navigate(`${path}/${id}`);
+    } else {
+      navigate(path);
+    }
   };
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
     onSearchChange(value);
-    setShowSuggestions(value.trim() !== '');
+    if (location.pathname === '/' && value.trim() !== '') {
+      setShowSuggestions(true);
+    } else {
+      setShowSuggestions(false);
+    }
   };
 
   const handleSuggestionClick = (bookId: string) => {
     onSearchChange('');
     setShowSuggestions(false);
-    handleNavigate(`/book/${bookId}`);
+    handleNavigate('/book', bookId);
   };
 
   return (
@@ -75,43 +92,47 @@ export const Navbar: React.FC<NavbarProps> = ({ searchQuery, onSearchChange }) =
             onClick={() => handleNavigate('/')}
           >
             <BookOpen className="size-8 text-blue-600" />
-            <span className="text-blue-600 font-bold">BookMart</span>
+            <span className="text-blue-600 font-bold">ClothingStore</span>
           </div>
 
-          {/* Search Bar - Desktop */}
-          <div className="hidden md:flex flex-1 max-w-md mx-8">
-            <div className="relative w-full" ref={searchRef}>
+          {/* Desktop Search */}
+          <div className="hidden md:flex flex-1 max-w-md mx-8 relative">
+            <div className="relative w-full" ref={desktopDropdownRef}>
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 size-5 text-gray-400" />
               <input
                 type="text"
-                placeholder="Search books, authors..."
+                placeholder="Search books, authors, or categories..."
                 value={searchQuery}
                 onChange={handleInputChange}
-                onFocus={() => setShowSuggestions(searchQuery.trim() !== '')}
+                onFocus={() => {
+                  if (location.pathname === '/' && searchQuery.trim() !== '') {
+                    setShowSuggestions(true);
+                  }
+                }}
                 className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
 
-              {/* Dropdown */}
-              {showSuggestions && suggestions.length > 0 && (
-                <div className="absolute top-full mt-1 w-full bg-white border border-gray-200 rounded-lg shadow-lg z-60 max-h-60 overflow-y-auto">
+              {/* Desktop Suggestions Dropdown */}
+              {shouldShowSuggestions && showSuggestions && (
+                <div className="absolute top-full mt-2 w-full bg-white border border-gray-200 rounded-lg shadow-lg z-60 max-h-60 overflow-y-auto">
                   {suggestions.map((book) => (
                     <div
                       key={book.id}
                       onClick={() => handleSuggestionClick(book.id)}
-                      className="px-4 py-3 hover:bg-gray-100 cursor-pointer flex gap-3 items-start"
+                      className="flex items-start gap-3 p-3 hover:bg-gray-50 cursor-pointer border-b border-gray-100 last:border-b-0"
                     >
                       <img
                         src={book.image.trim()}
                         alt={book.title}
-                        className="w-10 h-14 object-cover rounded shrink-0"
+                        className="w-10 h-14 object-cover rounded shrink-0 border border-gray-200"
                         onError={(e) => {
                           (e.currentTarget as HTMLImageElement).src =
                             "https://placehold.co/60x80/efefef/999?text=No+Image";
                         }}
                       />
                       <div>
-                        <p className="font-medium text-gray-900 line-clamp-1">{book.title}</p>
-                        <p className="text-sm text-gray-600">{book.author}</p>
+                        <p className="font-medium text-gray-900 text-sm leading-tight line-clamp-1">{book.title}</p>
+                        <p className="text-xs text-gray-600">{book.author} • {book.category}</p>
                       </div>
                     </div>
                   ))}
@@ -120,7 +141,7 @@ export const Navbar: React.FC<NavbarProps> = ({ searchQuery, onSearchChange }) =
             </div>
           </div>
 
-          {/* Desktop Nav */}
+          {/* Desktop Nav Icons */}
           <div className="hidden md:flex items-center gap-6">
             <button onClick={() => handleNavigate('/books')} className="text-gray-700 hover:text-blue-600">
               Books
@@ -159,16 +180,43 @@ export const Navbar: React.FC<NavbarProps> = ({ searchQuery, onSearchChange }) =
         </div>
 
         {/* Mobile Search */}
-        <div className="md:hidden pb-4">
-          <div className="relative">
+        <div className="md:hidden pb-4 relative">
+          <div className="relative" ref={mobileDropdownRef}>
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 size-5 text-gray-400" />
             <input
               type="text"
-              placeholder="Search books..."
+              placeholder="Search books, authors, or categories..."
               value={searchQuery}
-              onChange={(e) => onSearchChange(e.target.value)}
+              onChange={handleInputChange}
               className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
+
+            {/* Mobile Suggestions Dropdown */}
+            {shouldShowSuggestions && showSuggestions && (
+              <div className="mt-2 w-full bg-white border border-gray-200 rounded-lg shadow-lg z-60 max-h-60 overflow-y-auto">
+                {suggestions.map((book) => (
+                  <div
+                    key={book.id}
+                    onClick={() => handleSuggestionClick(book.id)}
+                    className="flex items-start gap-3 p-3 hover:bg-gray-50 cursor-pointer border-b border-gray-100 last:border-b-0"
+                  >
+                    <img
+                      src={book.image.trim()}
+                      alt={book.title}
+                      className="w-10 h-14 object-cover rounded shrink-0 border border-gray-200"
+                      onError={(e) => {
+                        (e.currentTarget as HTMLImageElement).src =
+                          "https://placehold.co/60x80/efefef/999?text=No+Image";
+                      }}
+                    />
+                    <div>
+                      <p className="font-medium text-gray-900 text-sm leading-tight line-clamp-1">{book.title}</p>
+                      <p className="text-xs text-gray-600">{book.author} • {book.category}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         </div>
       </div>
@@ -188,7 +236,10 @@ export const Navbar: React.FC<NavbarProps> = ({ searchQuery, onSearchChange }) =
               <ShoppingCart className="size-5" />
               Cart ({cartCount})
             </button>
-            <button onClick={() => handleNavigate('/login')} className="w-full bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700">
+            <button
+              onClick={() => handleNavigate('/login')}
+              className="w-full bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700"
+            >
               Login
             </button>
           </div>

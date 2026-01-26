@@ -1,57 +1,62 @@
-// src/pages/BooksPage.tsx
 import React, { useState, useMemo } from 'react';
 import { SlidersHorizontal } from 'lucide-react';
-import { mockBooks } from '../data/mockData';
-import { BookCard } from '../components/BookCard';
-import { useNavigate } from 'react-router-dom';
+import { BookCard } from './BookCard';
+import { useApp } from '../context/AppContext';
 
-interface BooksPageProps {
-  searchQuery: string; // ✅ Receive from App
+interface BookListingPageProps {
+  onNavigate: (page: string, bookId?: string) => void;
+  searchQuery?: string;
 }
 
-export const BooksPage = ({ searchQuery }: BooksPageProps) => {
-  const navigate = useNavigate();
+export const BookListingPage = ({ onNavigate, searchQuery = '' }: BookListingPageProps) => {
+  const { books } = useApp();
   const [sortBy, setSortBy] = useState<'newest' | 'price-low' | 'price-high' | 'rating'>('newest');
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
 
+  // Get unique categories
   const categories = useMemo(() => {
-    const cats = Array.from(new Set(mockBooks.map(book => book.category)));
+    const cats = Array.from(new Set(books.map(book => book.category)));
     return ['all', ...cats];
-  }, []);
-  const handleViewDetails = (bookId: string) => {
-  navigate(`/book/${bookId}`);
-  };
+  }, [books]);
 
-
+  // Filter and sort books
   const filteredAndSortedBooks = useMemo(() => {
-    let result = [...mockBooks];
+    let result = [...books];
 
+    // Filter by search query
     if (searchQuery) {
       const query = searchQuery.toLowerCase();
       result = result.filter(book =>
         book.title.toLowerCase().includes(query) ||
         book.author.toLowerCase().includes(query) ||
-        book.category.toLowerCase().includes(query)
+        book.category.toLowerCase().includes(query) ||
+        book.description.toLowerCase().includes(query)
       );
     }
 
+    // Filter by category
     if (selectedCategory !== 'all') {
       result = result.filter(book => book.category === selectedCategory);
     }
 
+    // Sort
     switch (sortBy) {
+      case 'newest':
+        result.sort((a, b) => new Date(b.publishedDate).getTime() - new Date(a.publishedDate).getTime());
+        break;
       case 'price-low':
-        result.sort((a, b) => a.price - b.price); break;
+        result.sort((a, b) => a.price - b.price);
+        break;
       case 'price-high':
-        result.sort((a, b) => b.price - a.price); break;
+        result.sort((a, b) => b.price - a.price);
+        break;
       case 'rating':
-        result.sort((a, b) => b.rating - a.rating); break;
-      default: // 'newest' → keep original order
+        result.sort((a, b) => b.rating - a.rating);
         break;
     }
 
     return result;
-  }, [searchQuery, selectedCategory, sortBy]); // ✅ React to prop change
+  }, [books, searchQuery, selectedCategory, sortBy]);
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -65,7 +70,6 @@ export const BooksPage = ({ searchQuery }: BooksPageProps) => {
             {filteredAndSortedBooks.length} {filteredAndSortedBooks.length === 1 ? 'book' : 'books'} found
           </p>
         </div>
-
 
         {/* Filters and Sort */}
         <div className="bg-white rounded-lg shadow-sm p-4 mb-8">
@@ -115,7 +119,7 @@ export const BooksPage = ({ searchQuery }: BooksPageProps) => {
               <BookCard
                 key={book.id}
                 book={book}
-                onViewDetails={handleViewDetails}
+                onViewDetails={(id) => onNavigate('book-details', id)}
               />
             ))}
           </div>
@@ -124,11 +128,12 @@ export const BooksPage = ({ searchQuery }: BooksPageProps) => {
             <p className="text-xl text-gray-600 mb-4">No books found</p>
             <button
               onClick={() => {
-               
+                setSelectedCategory('all');
+                onNavigate('books');
               }}
               className="text-indigo-600 hover:text-indigo-700"
             >
-              Clear search in navbar
+              Clear filters
             </button>
           </div>
         )}
@@ -136,5 +141,3 @@ export const BooksPage = ({ searchQuery }: BooksPageProps) => {
     </div>
   );
 };
-
-export default BooksPage;

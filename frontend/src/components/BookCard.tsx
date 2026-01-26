@@ -9,13 +9,14 @@ interface Book {
   author: string;
   price: number;
   rating: number;
-  imageLink: string;
+  image: string;
   category?: string;
   stock?: number; 
 }
 
 interface BookCardProps {
   book: Book;
+  onViewDetails: (id: string) => void;
 }
 
 export const BookCard: React.FC<BookCardProps> = ({ book }) => {
@@ -53,7 +54,7 @@ export const BookCard: React.FC<BookCardProps> = ({ book }) => {
         onClick={handleViewDetails}
       >
         <img
-          src={book.imageLink}
+          src={book.image}
           alt={book.title}
           className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-200"
           onError={(e) => {
