@@ -1,7 +1,7 @@
 // src/pages/BooksPage.tsx
 import React, { useState, useMemo } from 'react';
 import { SlidersHorizontal } from 'lucide-react';
-import { mockBooks } from '../data/mockBooks';
+import { mockBooks } from '../data/mockData';
 import { BookCard } from '../components/BookCard';
 import { useNavigate } from 'react-router-dom';
 
@@ -18,6 +18,10 @@ export const BooksPage = ({ searchQuery }: BooksPageProps) => {
     const cats = Array.from(new Set(mockBooks.map(book => book.category)));
     return ['all', ...cats];
   }, []);
+  const handleViewDetails = (bookId: string) => {
+  navigate(`/book/${bookId}`);
+  };
+
 
   const filteredAndSortedBooks = useMemo(() => {
     let result = [...mockBooks];
@@ -111,6 +115,7 @@ export const BooksPage = ({ searchQuery }: BooksPageProps) => {
               <BookCard
                 key={book.id}
                 book={book}
+                onViewDetails={handleViewDetails}
               />
             ))}
           </div>

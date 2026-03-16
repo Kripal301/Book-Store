@@ -1,4 +1,3 @@
-// src/data/mockBooks.ts
 export const mockBooks = [
   {
     id: "1",

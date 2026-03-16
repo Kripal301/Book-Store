@@ -1,7 +1,8 @@
 // src/components/Navbar.tsx
-import React, { useState } from 'react';
-import { ShoppingCart, Heart, User, BookOpen, Search, Menu, X } from 'lucide-react';
+import React, { useState, useRef, useEffect } from 'react';
+import { ShoppingCart, Heart, BookOpen, Search, Menu, X } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { mockBooks } from '../data/mockData';
 
 interface NavbarProps {
   searchQuery: string;
@@ -11,22 +12,61 @@ interface NavbarProps {
 export const Navbar: React.FC<NavbarProps> = ({ searchQuery, onSearchChange }) => {
   const navigate = useNavigate();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [showSuggestions, setShowSuggestions] = useState(false);
+  const searchRef = useRef<HTMLDivElement>(null);
 
-  // Mock data
+  // Mock data (replace with real context later)
   const cart = [];
   const wishlist = [];
-  const currentUser = null;
   const cartCount = cart.length;
   const wishlistCount = wishlist.length;
 
+  // Filter suggestions
+  const suggestions = React.useMemo(() => {
+    if (!searchQuery.trim()) return [];
+    return mockBooks
+      .filter(
+        (book) =>
+          book.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          book.author.toLowerCase().includes(searchQuery.toLowerCase())
+      )
+      .slice(0, 5);
+  }, [searchQuery]);
+
+  // Handle clicks outside to close dropdown
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (searchRef.current && !searchRef.current.contains(e.target as Node)) {
+        setShowSuggestions(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, []);
+
   const handleNavigate = (path: string) => {
     setMobileMenuOpen(false);
-    // If going to books, keep the search
+    setShowSuggestions(false);
     navigate(path);
   };
 
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    onSearchChange(value);
+    setShowSuggestions(value.trim() !== '');
+  };
+
+  const handleSuggestionClick = (bookId: string) => {
+    onSearchChange('');
+    setShowSuggestions(false);
+    handleNavigate(`/book/${bookId}`);
+  };
+
   return (
-    <nav className="bg-white shadow-md sticky top--0 z-50">
+    <nav className="bg-white shadow-md sticky top-0 z-50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16">
           {/* Logo */}
@@ -40,15 +80,43 @@ export const Navbar: React.FC<NavbarProps> = ({ searchQuery, onSearchChange }) =
 
           {/* Search Bar - Desktop */}
           <div className="hidden md:flex flex-1 max-w-md mx-8">
-            <div className="relative w-full">
+            <div className="relative w-full" ref={searchRef}>
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 size-5 text-gray-400" />
               <input
                 type="text"
                 placeholder="Search books, authors..."
                 value={searchQuery}
-                onChange={(e) => onSearchChange(e.target.value)}
+                onChange={handleInputChange}
+                onFocus={() => setShowSuggestions(searchQuery.trim() !== '')}
                 className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
+
+              {/* Dropdown */}
+              {showSuggestions && suggestions.length > 0 && (
+                <div className="absolute top-full mt-1 w-full bg-white border border-gray-200 rounded-lg shadow-lg z-60 max-h-60 overflow-y-auto">
+                  {suggestions.map((book) => (
+                    <div
+                      key={book.id}
+                      onClick={() => handleSuggestionClick(book.id)}
+                      className="px-4 py-3 hover:bg-gray-100 cursor-pointer flex gap-3 items-start"
+                    >
+                      <img
+                        src={book.image.trim()}
+                        alt={book.title}
+                        className="w-10 h-14 object-cover rounded shrink-0"
+                        onError={(e) => {
+                          (e.currentTarget as HTMLImageElement).src =
+                            "https://placehold.co/60x80/efefef/999?text=No+Image";
+                        }}
+                      />
+                      <div>
+                        <p className="font-medium text-gray-900 line-clamp-1">{book.title}</p>
+                        <p className="text-sm text-gray-600">{book.author}</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
           </div>
 
