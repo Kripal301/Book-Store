@@ -1,7 +1,14 @@
 import React, { useState } from 'react';
 import { AppProvider } from './context/AppContext';
+<<<<<<< HEAD
 import { Header } from './pages/Header';
 import { HomePage } from './pages/HomePage';
+=======
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { Header } from './pages/Header';
+import { HomePage } from './pages/HomePage';
+import { BooksPage } from './pages/BooksPage';
+>>>>>>> d640a629001638efdb3d99cf09899bee62beee4a
 import { BookDetailsPage } from './pages/BookDetailsPage';
 import { BookListingPage } from './pages/BookListingPage';
 import { LoginPage } from './pages/LoginPage';
@@ -107,7 +114,11 @@ export default function App() {
             </div>
             
             <div className="border-t border-gray-800 mt-8 pt-8 text-center text-sm text-gray-400">
+<<<<<<< HEAD
               <p>&copy; 2025 BookMart. All rights reserved.</p>
+=======
+              <p>&copy; 2025 BookStore. All rights reserved.</p>
+>>>>>>> d640a629001638efdb3d99cf09899bee62beee4a
             </div>
           </div>
         </footer>

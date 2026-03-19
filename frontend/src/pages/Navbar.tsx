@@ -92,7 +92,11 @@ export const Navbar: React.FC<NavbarProps> = ({ searchQuery, onSearchChange }) =
             onClick={() => handleNavigate('/')}
           >
             <BookOpen className="size-8 text-blue-600" />
+<<<<<<< HEAD
             <span className="text-blue-600 font-bold">BookMart</span>
+=======
+            <span className="text-blue-600 font-bold">ClothingStore</span>
+>>>>>>> d640a629001638efdb3d99cf09899bee62beee4a
           </div>
 
           {/* Desktop Search */}
