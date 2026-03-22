@@ -7,14 +7,15 @@ interface SignupPageProps {
 }
 
 export const SignupPage = ({ onNavigate }: SignupPageProps) => {
-  const { signup } = useApp();
+  const { signup, loadingAuth } = useApp();
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [error, setError] = useState('');
 
-  const handleSubmit = (e: React.FormEvent) => {
+  
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
 
@@ -28,12 +29,18 @@ export const SignupPage = ({ onNavigate }: SignupPageProps) => {
       return;
     }
 
-    if (signup(name, email, password)) {
-      onNavigate('home');
-    } else {
-      setError('Email already exists');
+    try {
+      const success = await signup(name, email, password); // Now returns Promise
+      if (success) {
+        onNavigate('home');
+      } else {
+        setError('Email already exists');
+      }
+    } catch (err: any) {
+      setError(err.message || 'Signup failed. Please try again.');
     }
   };
+
 
   return (
     <div className="min-h-screen bg-gray-50 flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
@@ -128,9 +135,10 @@ export const SignupPage = ({ onNavigate }: SignupPageProps) => {
 
             <button
               type="submit"
-              className="w-full py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors"
+              disabled={loadingAuth}
+              className="... disabled:opacity-50"
             >
-              Create Account
+              {loadingAuth ? 'Creating account...' : 'Create Account'}
             </button>
           </form>
 

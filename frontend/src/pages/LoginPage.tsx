@@ -7,21 +7,26 @@ interface LoginPageProps {
 }
 
 export const LoginPage = ({ onNavigate }: LoginPageProps) => {
-  const { login } = useApp();
+  const { login, loadingAuth } = useApp();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    setError('');
+  const handleSubmit = async (e: React.FormEvent) => {
+  e.preventDefault();
+  setError('');
 
-    if (login(email, password)) {
+  try {
+    const success = await login(email, password); // Now returns Promise
+    if (success) {
       onNavigate('home');
     } else {
       setError('Invalid email or password');
     }
-  };
+  } catch (err: any) {
+    setError(err.message || 'Login failed. Please try again.');
+  }
+};
 
   return (
     <div className="min-h-screen bg-gray-50 flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
@@ -80,9 +85,10 @@ export const LoginPage = ({ onNavigate }: LoginPageProps) => {
 
             <button
               type="submit"
-              className="w-full py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors"
+              disabled={loadingAuth}
+              className="w-full py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors disabled:opacity-50"
             >
-              Sign In
+              {loadingAuth ? 'Signing in...' : 'Sign In'}
             </button>
           </form>
 

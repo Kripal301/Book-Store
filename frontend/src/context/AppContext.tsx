@@ -1,242 +1,426 @@
-  import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-    import { Book, User, CartItem, Order } from '../types';
-    import { mockBooks, mockUsers, mockOrders } from '../data/mockData';
-  
+  // src/context/AppContext.tsx
+  import React, { createContext, useContext, useState, useEffect, ReactNode, useCallback } from 'react';
+  import { Book, User, CartItem, Order } from '../types';
+  import { authService } from '../services/authService';
+  import { bookService, BooksResponse } from '../services/bookService';
+  import { cartService, CartResponse } from '../services/cartService';
+  import { orderService } from '../services/orderService';
+
   interface AppContextType {
     // Books
     books: Book[];
-    addBook: (book: Book) => void;
-    updateBook: (id: string, book: Partial<Book>) => void;
-    deleteBook: (id: string) => void;
+    loading: boolean;
+    error: string | null;
+    fetchBooks: (params?: any) => Promise<void>;
+    addBook: (book: Omit<Book, 'id' | 'createdAt' | 'updatedAt'>) => Promise<Book>;
+    updateBook: (id: string, book: Partial<Book>) => Promise<Book>;
+    deleteBook: (id: string) => Promise<void>;
     
     // User & Auth
     currentUser: User | null;
-    login: (email: string, password: string) => boolean;
+    loadingAuth: boolean;
+    login: (email: string, password: string) => Promise<boolean>;
     logout: () => void;
-    signup: (name: string, email: string, password: string) => boolean;
-    updateProfile: (updates: Partial<User>) => void;
-    users: User[];
+    signup: (name: string, email: string, password: string) => Promise<boolean>;
+    refreshUser: () => Promise<void>;
     
     // Cart
     cart: CartItem[];
-    addToCart: (book: Book) => void;
-    removeFromCart: (bookId: string) => void;
-    updateCartQuantity: (bookId: string, quantity: number) => void;
-    clearCart: () => void;
+    cartLoading: boolean;
+    fetchCart: () => Promise<void>;
+    addToCart: (bookId: string, quantity?: number) => Promise<void>;
+    removeFromCart: (bookId: string) => Promise<void>;
+    updateCartQuantity: (bookId: string, quantity: number) => Promise<void>;
+    clearCart: () => Promise<void>;
     
-    // Wishlist
+    // Wishlist (keep localStorage for now, or add backend later)
     wishlist: Book[];
     addToWishlist: (book: Book) => void;
     removeFromWishlist: (bookId: string) => void;
+
+
+    createOrder: (deliveryAddress: string, paymentMethod: string) => Promise<void>;
+    updateOrderStatus: (orderId: string, status: Order['status']) => Promise<void>;
+    users: User[];
     
-    // Orders
+    // Orders (optional - implement when ready)
     orders: Order[];
-    createOrder: (deliveryAddress: string, paymentMethod: string) => void;
-    updateOrderStatus: (orderId: string, status: Order['status']) => void;
+
+    updateProfile: (updates: Partial<User>) => Promise<void>;
   }
-  
+
   const AppContext = createContext<AppContextType | undefined>(undefined);
-  
+
   export const AppProvider = ({ children }: { children: ReactNode }) => {
-    const [books, setBooks] = useState<Book[]>(mockBooks);
+    // State
+    const [books, setBooks] = useState<Book[]>([]);
     const [currentUser, setCurrentUser] = useState<User | null>(null);
-    const [users, setUsers] = useState<User[]>(mockUsers);
     const [cart, setCart] = useState<CartItem[]>([]);
     const [wishlist, setWishlist] = useState<Book[]>([]);
-    const [orders, setOrders] = useState<Order[]>(mockOrders);
-  
-    // Load from localStorage
+    const [orders, setOrders] = useState<Order[]>([]);
+    const [users, setUsers] = useState<User[]>([]); 
+    
+    // Loading & Error states
+    const [loading, setLoading] = useState(false);
+    const [loadingAuth, setLoadingAuth] = useState(true);
+    const [cartLoading, setCartLoading] = useState(false);
+    const [error, setError] = useState<string | null>(null);
+
+      // Load auth state on mount
+      useEffect(() => {
+        const initializeAuth = async () => {
+          try {
+            // 🔍 DEBUG: Log token status before calling /auth/me
+            const token = localStorage.getItem('token');
+            console.log('🔍 initializeAuth: Token in localStorage?', !!token);
+            console.log('🔍 initializeAuth: Token first 30 chars:', token?.substring(0, 30) + '...');
+            
+            if (authService.isAuthenticated()) {
+              console.log('🔍 initializeAuth: Calling GET /auth/me...');
+              const response = await authService.getMe();
+              
+              if (response.success) {
+                console.log('🔍 initializeAuth: User authenticated:', response.user.email);
+                setCurrentUser(response.user);
+              } else {
+                console.log('🔍 initializeAuth: getMe returned success: false');
+                authService.logout();  // This clears the token!
+              }
+            } else {
+              console.log('🔍 initializeAuth: No valid token found, user not authenticated');
+            }
+          } catch (err: any) {
+            // 🔍 DEBUG: Log the exact error
+            console.error('❌ initializeAuth: Auth error:', {
+              message: err.message,
+              name: err.name,
+              stack: err.stack,
+            });
+            
+            // This is what clears your token!
+            console.log('🔍 initializeAuth: Calling authService.logout() to clear invalid token');
+            authService.logout();
+          } finally {
+            setLoadingAuth(false);
+          }
+        };
+        
+        initializeAuth();
+      }, []);
+
+    // Load wishlist from localStorage (keep client-side for now)
     useEffect(() => {
-      const savedUser = localStorage.getItem('currentUser');
-      if (savedUser) {
-        setCurrentUser(JSON.parse(savedUser));
-      }
-      
-      const savedCart = localStorage.getItem('cart');
-      if (savedCart) {
-        setCart(JSON.parse(savedCart));
-      }
-      
-      const savedWishlist = localStorage.getItem('wishlist');
-      if (savedWishlist) {
-        setWishlist(JSON.parse(savedWishlist));
+      const saved = localStorage.getItem('wishlist');
+      if (saved) {
+        setWishlist(JSON.parse(saved));
       }
     }, []);
-  
-    // Save to localStorage
-    useEffect(() => {
-      if (currentUser) {
-        localStorage.setItem('currentUser', JSON.stringify(currentUser));
-      } else {
-        localStorage.removeItem('currentUser');
-      }
-    }, [currentUser]);
-  
-    useEffect(() => {
-      localStorage.setItem('cart', JSON.stringify(cart));
-    }, [cart]);
-  
+
     useEffect(() => {
       localStorage.setItem('wishlist', JSON.stringify(wishlist));
     }, [wishlist]);
-  
-    // Book Management
-    const addBook = (book: Book) => {
-      setBooks([...books, book]);
-    };
-  
-    const updateBook = (id: string, updates: Partial<Book>) => {
-      setBooks(books.map(book => book.id === id ? { ...book, ...updates } : book));
-    };
-  
-    const deleteBook = (id: string) => {
-      setBooks(books.filter(book => book.id !== id));
-    };
-  
-    // Auth
-    const login = (email: string, password: string): boolean => {
-      const user = users.find(u => u.email === email && u.password === password);
-      if (user) {
-        setCurrentUser(user);
-        return true;
+
+    // Load cart when user logs in
+    useEffect(() => {
+      if (currentUser) {
+        fetchCart();
+      } else {
+        setCart([]);
       }
-      return false;
-    };
-  
-    const logout = () => {
+    }, [currentUser]);
+
+    // ========== BOOKS ==========
+    
+    const fetchBooks = useCallback(async (params?: any) => {
+      setLoading(true);
+      setError(null);
+      try {
+        const response: BooksResponse = await bookService.getBooks(params);
+        // Map _id to id for frontend convenience
+        const booksWithId = response.books.map(book => ({
+          ...book,
+          id: book.id
+        }));
+        setBooks(booksWithId);
+      } catch (err: any) {
+        setError(err.message || 'Failed to fetch books');
+        console.error('Fetch books error:', err);
+      } finally {
+        setLoading(false);
+      }
+    }, []);
+
+    const addBook = useCallback(async (bookData: Omit<Book, 'id' | 'createdAt' | 'updatedAt'>) => {
+      const response = await bookService.createBook(bookData);
+      const newBook = { ...response.book, id: response.book.id };
+      setBooks(prev => [...prev, newBook]);
+      return newBook;
+    }, []);
+
+    const updateBook = useCallback(async (id: string, updates: Partial<Book>) => {
+      const response = await bookService.updateBook(id, updates);
+      const updatedBook = { ...response.book, id: response.book.id };
+      setBooks(prev => prev.map(b => b.id === id ? updatedBook : b));
+      return updatedBook;
+    }, []);
+
+    const deleteBook = useCallback(async (id: string) => {
+      await bookService.deleteBook(id);
+      setBooks(prev => prev.filter(b => b.id !== id));
+    }, []);
+
+    // ========== AUTH ==========
+
+    const login = useCallback(async (email: string, password: string): Promise<boolean> => {
+      setLoadingAuth(true);
+      setError(null);
+      try {
+        const response = await authService.login({ email, password });
+        if (response.success) {
+          setCurrentUser(response.user);
+          return true;
+        }
+        return false;
+      } catch (err: any) {
+        setError(err.message || 'Login failed');
+        return false;
+      } finally {
+        setLoadingAuth(false);
+      }
+    }, []);
+
+    const signup = useCallback(async (name: string, email: string, password: string): Promise<boolean> => {
+      setLoadingAuth(true);
+      setError(null);
+      try {
+        const response = await authService.signup({ name, email, password });
+        if (response.success) {
+          setCurrentUser(response.user);
+          return true;
+        }
+        return false;
+      } catch (err: any) {
+        setError(err.message || 'Signup failed');
+        return false;
+      } finally {
+        setLoadingAuth(false);
+      }
+    }, []);
+
+    const logout = useCallback(() => {
+      authService.logout();
       setCurrentUser(null);
       setCart([]);
-      setWishlist([]);
-    };
-  
-    const signup = (name: string, email: string, password: string): boolean => {
-      const existingUser = users.find(u => u.email === email);
-      if (existingUser) {
-        return false;
+      // Optionally redirect to login page via callback
+    }, []);
+
+    const refreshUser = useCallback(async () => {
+      try {
+        if (authService.isAuthenticated()) {
+          const response = await authService.getMe();
+          if (response.success) {
+            setCurrentUser(response.user);
+          }
+        }
+      } catch (err) {
+        console.error('Refresh user error:', err);
+        logout();
       }
+    }, [logout]);
+
+    const updateProfile = useCallback(async (updates: Partial<User>) => {
+      if (!currentUser) return;
       
-      const newUser: User = {
-        id: Date.now().toString(),
-        name,
-        email,
-        password,
-        isAdmin: false
-      };
+      // TODO: Implement backend API call when ready
+      // await userService.updateProfile(currentUser.id, updates);
       
-      setUsers([...users, newUser]);
-      setCurrentUser(newUser);
-      return true;
-    };
-  
-    const updateProfile = (updates: Partial<User>) => {
+      // For now, update local state
+      setCurrentUser(prev => prev ? { ...prev, ...updates } : prev);
+    }, [currentUser]);
+
+    // ========== CART ==========
+
+    const fetchCart = useCallback(async () => {
+      if (!currentUser) return;
+      
+      setCartLoading(true);
+      try {
+        const response: CartResponse = await cartService.getCart();
+        if (response.success) {
+          // ✅ cartService already maps _id → id, so use response.cart directly
+          setCart(response.cart);
+        }
+      } catch (err: any) {
+        console.error('Fetch cart error:', err);
+      } finally {
+        setCartLoading(false);
+      }
+    }, [currentUser]);
+
+    const addToCart = useCallback(async (bookId: string, quantity: number = 1) => {
+      try {
+        const response: CartResponse = await cartService.addToCart(bookId, quantity);
+        if (response.success) {
+          // ✅ Use response.cart directly (already mapped by service)
+          setCart(response.cart);
+        }
+      } catch (err: any) {
+        setError(err.message || 'Failed to add to cart');
+        throw err;
+      }
+    }, []);
+
+    const removeFromCart = useCallback(async (bookId: string) => {
+      try {
+        const response: CartResponse = await cartService.removeFromCart(bookId);
+        if (response.success) {
+          setCart(response.cart);  // ✅ Direct assignment
+        }
+      } catch (err: any) {
+        setError(err.message || 'Failed to remove from cart');
+        throw err;
+      }
+    }, []);
+
+    const updateCartQuantity = useCallback(async (bookId: string, quantity: number) => {
+      try {
+        const response: CartResponse = await cartService.updateCartItem(bookId, quantity);
+        if (response.success) {
+          setCart(response.cart);  // ✅ Direct assignment
+        }
+      } catch (err: any) {
+        setError(err.message || 'Failed to update cart');
+        throw err;
+      }
+    }, []);
+
+    const clearCart = useCallback(async () => {
+      try {
+        await cartService.clearCart();
+        setCart([]);
+      } catch (err: any) {
+        setError(err.message || 'Failed to clear cart');
+        throw err;
+      }
+    }, []);
+
+    // ========== WISHLIST (Client-side only for now) ==========
+
+    const addToWishlist = useCallback((book: Book) => {
+      setWishlist(prev => {
+        if (prev.find(b => b.id === book.id)) return prev;
+        return [...prev, book];
+      });
+    }, []);
+
+    const removeFromWishlist = useCallback((bookId: string) => {
+      setWishlist(prev => prev.filter(b => b.id !== bookId));
+    }, []);
+
+    // Add fetchOrders function
+    const fetchOrders = useCallback(async () => {
+      if (!currentUser) return;
+      try {
+        const response = currentUser.isAdmin
+          ? await orderService.getAllOrders()
+          : await orderService.getUserOrders();
+        if (response.success) {
+          setOrders(response.orders);
+        }
+      } catch (err: any) {
+        console.error('Fetch orders error:', err);
+      }
+    }, [currentUser]);
+
+    // Add useEffect to load orders on login (alongside your cart useEffect)
+    useEffect(() => {
       if (currentUser) {
-        const updatedUser = { ...currentUser, ...updates };
-        setCurrentUser(updatedUser);
-        setUsers(users.map(u => u.id === currentUser.id ? updatedUser : u));
-      }
-    };
-  
-    // Cart
-    const addToCart = (book: Book) => {
-      const existing = cart.find(item => item.book.id === book.id);
-      if (existing) {
-        setCart(cart.map(item => 
-          item.book.id === book.id 
-            ? { ...item, quantity: item.quantity + 1 }
-            : item
-        ));
+        fetchOrders();
       } else {
-        setCart([...cart, { book, quantity: 1 }]);
+        setOrders([]);
       }
-    };
-  
-    const removeFromCart = (bookId: string) => {
-      setCart(cart.filter(item => item.book.id !== bookId));
-    };
-  
-    const updateCartQuantity = (bookId: string, quantity: number) => {
-      if (quantity <= 0) {
-        removeFromCart(bookId);
-      } else {
-        setCart(cart.map(item =>
-          item.book.id === bookId ? { ...item, quantity } : item
-        ));
-      }
-    };
-  
-    const clearCart = () => {
-      setCart([]);
-    };
-  
-    // Wishlist
-    const addToWishlist = (book: Book) => {
-      if (!wishlist.find(b => b.id === book.id)) {
-        setWishlist([...wishlist, book]);
-      }
-    };
-  
-    const removeFromWishlist = (bookId: string) => {
-      setWishlist(wishlist.filter(b => b.id !== bookId));
-    };
-  
-    // Orders
-    const createOrder = (deliveryAddress: string, paymentMethod: string) => {
+    }, [currentUser]);
+
+    // Replace createOrder placeholder
+    const createOrder = useCallback(async (deliveryAddress: string, paymentMethod: string) => {
       if (!currentUser || cart.length === 0) return;
+      try {
+        const response = await orderService.createOrder(deliveryAddress, paymentMethod);
+        if (response.success) {
+          setOrders(prev => [response.order, ...prev]);
+          setCart([]); // backend already cleared cart, sync frontend
+        }
+      } catch (err: any) {
+        setError(err.message || 'Failed to create order');
+        throw err;
+      }
+    }, [currentUser, cart]);
+
+    // Replace updateOrderStatus placeholder
+    const updateOrderStatus = useCallback(async (orderId: string, status: Order['status']) => {
+      try {
+        const response = await orderService.updateOrderStatus(orderId, status);
+        if (response.success) {
+          setOrders(prev => prev.map(order =>
+            order.id === orderId ? { ...order, status } : order
+          ));
+        }
+      } catch (err: any) {
+        setError(err.message || 'Failed to update order status');
+        throw err;
+      }
+    }, []);
+
+
+    // ========== CONTEXT VALUE ==========
+
+    const value: AppContextType = {
+      // Books
+      books,
+      loading,
+      error,
+      fetchBooks,
+      addBook,
+      updateBook,
+      deleteBook,
       
-      const total = cart.reduce((sum, item) => sum + (item.book.price * item.quantity), 0);
+      // Auth
+      currentUser,
+      loadingAuth,
+      login,
+      logout,
+      signup,
+      refreshUser,
       
-      const newOrder: Order = {
-        id: `ORD${Date.now()}`,
-        userId: currentUser.id,
-        items: [...cart],
-        total,
-        deliveryAddress,
-        paymentMethod,
-        status: 'pending',
-        date: new Date().toISOString().split('T')[0]
-      };
+      // Cart
+      cart,
+      cartLoading,
+      fetchCart,
+      addToCart,
+      removeFromCart,
+      updateCartQuantity,
+      clearCart,
       
-      setOrders([newOrder, ...orders]);
-      clearCart();
+      // Wishlist
+      wishlist,
+      addToWishlist,
+      removeFromWishlist,
+      
+      // Orders
+      orders,
+      updateOrderStatus,
+      createOrder,
+      users,
+      updateProfile,
     };
-  
-    const updateOrderStatus = (orderId: string, status: Order['status']) => {
-      setOrders(orders.map(order =>
-        order.id === orderId ? { ...order, status } : order
-      ));
-    };
-  
+
     return (
-      <AppContext.Provider
-        value={{
-          books,
-          addBook,
-          updateBook,
-          deleteBook,
-          currentUser,
-          login,
-          logout,
-          signup,
-          updateProfile,
-          users,
-          cart,
-          addToCart,
-          removeFromCart,
-          updateCartQuantity,
-          clearCart,
-          wishlist,
-          addToWishlist,
-          removeFromWishlist,
-          orders,
-          createOrder,
-          updateOrderStatus
-        }}
-      >
+      <AppContext.Provider value={value}>
         {children}
       </AppContext.Provider>
     );
   };
-  
+
   export const useApp = () => {
     const context = useContext(AppContext);
     if (!context) {

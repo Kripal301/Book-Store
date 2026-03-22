@@ -36,11 +36,7 @@ export const HomePage = ({ onNavigate }: HomePageProps) => {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20">
           <div className="text-center">
             <h1 className="text-4xl md:text-6xl mb-4">
-<<<<<<< HEAD
               Welcome to BookMart
-=======
-              Welcome to ClothingStore
->>>>>>> d640a629001638efdb3d99cf09899bee62beee4a
             </h1>
             <p className="text-xl mb-8 text-indigo-100">
               Discover your next favorite book from our curated

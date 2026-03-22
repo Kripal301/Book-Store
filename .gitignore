@@ -1,0 +1,33 @@
+# Dependencies
+node_modules/
+
+# Environment variables
+.env
+.env.local
+
+# Build artifacts
+build/
+dist/
+public/
+temp/
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+
+# Optional npm cache files
+.npm
+
+# Runtime data
+*.pid
+*.seed
+
+# OS and Editor files
+.DS_Store # macOS
+Thumbs.db # Windows
+.vscode/ # VS Code configuration (optional)
+
+# Testing/Coverage
+coverage/
+.nyc_output/
