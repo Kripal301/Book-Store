@@ -34,7 +34,7 @@ export const Header = ({ onNavigate, currentPage, onSearch }: HeaderProps) => {
             <div className="text-indigo-600 mr-2">
               <Package className="w-8 h-8" />
             </div>
-            <span className="text-xl text-gray-900">BookStore</span>
+            <span className="text-xl text-gray-900">BookMart</span>
           </div>
 
           {/* Search Bar - Desktop */}

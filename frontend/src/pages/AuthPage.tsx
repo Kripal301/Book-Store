@@ -71,7 +71,7 @@
           <div className="text-center mb-8">
             <div className="flex items-center justify-center gap-2 mb-4">
               <BookOpen className="size-12 text-blue-600" />
-              <span className="text-blue-600 text-2xl">BookStore</span>
+              <span className="text-blue-600 text-2xl">BookMart</span>
             </div>
             <h2 className="text-gray-900">{isLogin ? 'Welcome Back' : 'Create Account'}</h2>
             <p className="text-gray-600 mt-2">
