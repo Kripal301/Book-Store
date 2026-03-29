@@ -37,7 +37,7 @@ const orderSchema = new mongoose.Schema({
   paymentMethod: {
     type: String,
     required: [true, 'Payment method is required'],
-    enum: ['COD', 'eSewa', 'Khalti', 'Credit Card', 'Debit Card', 'PayPal']
+    enum: ['COD', 'eSewa', 'Khalti', 'Credit Card', 'Debit Card', 'Card'] // ✅ added 'Card'
   },
   status: {
     type: String,
@@ -53,10 +53,8 @@ const orderSchema = new mongoose.Schema({
   timestamps: true
 });
 
-// Index for user orders lookup
-orderSchema.index({ userId: 1, date: -1 });
+orderSchema.index({ userId: 1, createdAt: -1 }); // ✅ fixed: createdAt not date
 
-// Virtual for user details
 orderSchema.virtual('user', {
   ref: 'User',
   localField: 'userId',
@@ -64,13 +62,6 @@ orderSchema.virtual('user', {
   justOne: true
 });
 
-// Middleware to populate user details
-orderSchema.pre(/^find/, function(next) {
-  this.populate({
-    path: 'items.book',
-    select: 'title author price image'
-  });
-  next();
-});
+// ✅ REMOVED the pre hook - it was causing "next is not a function"
 
 module.exports = mongoose.model('Order', orderSchema);

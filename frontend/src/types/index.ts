@@ -33,6 +33,7 @@ export interface Book {
   publishedDate: string;
   createdAt?: string;
   updatedAt?: string;
+  featured?: boolean;
 }
 
 export interface CartItem {

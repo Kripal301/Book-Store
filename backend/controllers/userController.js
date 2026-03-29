@@ -1,192 +1,117 @@
-const Order = require('../models/Order');
+// controllers/userController.js
 const User = require('../models/User');
-const Book = require('../models/Book');
 
-// @desc    Create new order
-// @route   POST /api/orders
-// @access  Private
-exports.createOrder = async (req, res) => {
-  try {
-    const { deliveryAddress, paymentMethod } = req.body;
-    const userId = req.user.id;
-
-    // Get user's cart
-    const user = await User.findById(userId).populate('cart.book');
-
-    if (user.cart.length === 0) {
-      return res.status(400).json({
-        success: false,
-        message: 'Cart is empty'
-      });
-    }
-
-    // Prepare order items
-    const items = user.cart.map(item => ({
-      book: item.book._id,
-      title: item.book.title,
-      author: item.book.author,
-      price: item.book.price,
-      image: item.book.image,
-      quantity: item.quantity
-    }));
-
-    // Calculate total
-    const total = items.reduce((sum, item) => sum + (item.price * item.quantity), 0);
-
-    // Create order
-    const order = await Order.create({
-      userId,
-      items,
-      total,
-      deliveryAddress,
-      paymentMethod,
-      status: 'pending'
-    });
-
-    // Clear user's cart
-    user.cart = [];
-    await user.save();
-
-    // Update book stock
-    for (const item of items) {
-      await Book.findByIdAndUpdate(item.book, {
-        $inc: { stock: -item.quantity }
-      });
-    }
-
-    res.status(201).json({
-      success: true,
-      message: 'Order created successfully',
-      order
-    });
-  } catch (error) {
-    res.status(500).json({
-      success: false,
-      message: error.message || 'Server error creating order'
-    });
-  }
-};
-
-// @desc    Get all orders for user
-// @route   GET /api/orders
-// @access  Private
-exports.getUserOrders = async (req, res) => {
-  try {
-    const orders = await Order.find({ userId: req.user.id })
-      .sort({ date: -1 });
-
-    res.json({
-      success: true,
-      count: orders.length,
-      orders
-    });
-  } catch (error) {
-    res.status(500).json({
-      success: false,
-      message: error.message || 'Server error fetching orders'
-    });
-  }
-};
-
-// @desc    Get single order
-// @route   GET /api/orders/:id
-// @access  Private
-exports.getOrder = async (req, res) => {
-  try {
-    const order = await Order.findById(req.params.id);
-
-    if (!order) {
-      return res.status(404).json({
-        success: false,
-        message: 'Order not found'
-      });
-    }
-
-    // Check if user owns this order
-    if (order.userId.toString() !== req.user.id && !req.user.isAdmin) {
-      return res.status(403).json({
-        success: false,
-        message: 'Not authorized to view this order'
-      });
-    }
-
-    res.json({
-      success: true,
-      order
-    });
-  } catch (error) {
-    res.status(500).json({
-      success: false,
-      message: error.message || 'Server error fetching order'
-    });
-  }
-};
-
-// @desc    Get all orders (Admin)
-// @route   GET /api/orders/admin
+// @desc    Get all users
+// @route   GET /api/users
 // @access  Private/Admin
-exports.getAllOrders = async (req, res) => {
+exports.getUsers = async (req, res) => {
   try {
-    const { status, page = 1, limit = 10 } = req.query;
-
-    let query = {};
-    if (status) {
-      query.status = status;
-    }
-
-    const orders = await Order.find(query)
-      .populate('userId', 'name email')
-      .sort({ date: -1 })
-      .limit(limit * 1)
-      .skip((page - 1) * limit);
-
-    const count = await Order.countDocuments(query);
-
+    const users = await User.find({}).select('-password');
+    
     res.json({
       success: true,
-      count: orders.length,
-      total: count,
-      page: parseInt(page),
-      pages: Math.ceil(count / limit),
-      orders
+      count: users.length,
+      users: users.map(user => ({
+        id: user._id,
+        name: user.name,
+        email: user.email,
+        isAdmin: user.isAdmin,
+        address: user.address,
+        phone: user.phone,
+        createdAt: user.createdAt,
+      }))
     });
   } catch (error) {
-    res.status(500).json({
-      success: false,
-      message: error.message || 'Server error fetching orders'
-    });
+    console.error('Get users error:', error);
+    res.status(500).json({ success: false, message: error.message });
   }
 };
 
-// @desc    Update order status (Admin)
-// @route   PUT /api/orders/:id/status
+// @desc    Get single user
+// @route   GET /api/users/:id
 // @access  Private/Admin
-exports.updateOrderStatus = async (req, res) => {
+exports.getUser = async (req, res) => {
   try {
-    const { status } = req.body;
+    const user = await User.findById(req.params.id).select('-password');
+    
+    if (!user) {
+      return res.status(404).json({ success: false, message: 'User not found' });
+    }
+    
+    res.json({
+      success: true,
+      user: {
+        id: user._id,
+        name: user.name,
+        email: user.email,
+        isAdmin: user.isAdmin,
+        address: user.address,
+        phone: user.phone,
+        createdAt: user.createdAt,
+      }
+    });
+  } catch (error) {
+    console.error('Get user error:', error);
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
 
-    const order = await Order.findByIdAndUpdate(
+// @desc    Update user
+// @route   PUT /api/users/:id
+// @access  Private/Admin
+exports.updateUser = async (req, res) => {
+  try {
+    const { name, email, isAdmin, address, phone } = req.body;
+    
+    const user = await User.findByIdAndUpdate(
       req.params.id,
-      { status },
-      { new: true }
-    );
-
-    if (!order) {
-      return res.status(404).json({
-        success: false,
-        message: 'Order not found'
-      });
+      { name, email, isAdmin, address, phone },
+      { new: true, runValidators: true }
+    ).select('-password');
+    
+    if (!user) {
+      return res.status(404).json({ success: false, message: 'User not found' });
     }
-
+    
     res.json({
       success: true,
-      message: 'Order status updated successfully',
-      order
+      user: {
+        id: user._id,
+        name: user.name,
+        email: user.email,
+        isAdmin: user.isAdmin,
+        address: user.address,
+        phone: user.phone,
+      }
     });
   } catch (error) {
-    res.status(500).json({
-      success: false,
-      message: error.message || 'Server error updating order status'
-    });
+    console.error('Update user error:', error);
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+// @desc    Delete user
+// @route   DELETE /api/users/:id
+// @access  Private/Admin
+exports.deleteUser = async (req, res) => {
+  try {
+    // Prevent admin from deleting themselves
+    if (req.params.id === req.user.id) {
+      return res.status(400).json({ 
+        success: false, 
+        message: 'Cannot delete your own account' 
+      });
+    }
+    
+    const user = await User.findByIdAndDelete(req.params.id);
+    
+    if (!user) {
+      return res.status(404).json({ success: false, message: 'User not found' });
+    }
+    
+    res.json({ success: true, message: 'User deleted successfully' });
+  } catch (error) {
+    console.error('Delete user error:', error);
+    res.status(500).json({ success: false, message: error.message });
   }
 };

@@ -8,6 +8,8 @@
     onNavigate: (page: string) => void;
   }
 
+  
+
   export const AdminPage = ({ onNavigate }: AdminPageProps) => {
     // ✅ Get values from context (don't redefine anything here!)
     const { 
@@ -77,8 +79,8 @@
             image: bookForm.image?.trim() || 'https://placehold.co/400x600?text=No+Image',
             description: bookForm.description?.trim() || '',
             category: (bookForm.category && CATEGORIES.includes(bookForm.category as typeof CATEGORIES[number]))
-            ? (bookForm.category as string)
-            : 'Other',
+          ? (bookForm.category as string)
+          : 'Other',
             stock: bookForm.stock != null ? Number(bookForm.stock) : 0,
             publishedDate: bookForm.publishedDate?.trim() || new Date().toISOString().split('T')[0]
           };
@@ -201,7 +203,7 @@
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm text-gray-600">Total Revenue</p>
-                  <p className="text-2xl text-gray-900 mt-1">${stats.totalRevenue.toFixed(2)}</p>
+                  <p className="text-2xl text-gray-900 mt-1">NRs.{stats.totalRevenue.toFixed(2)}</p>
                 </div>
                 <div className="w-12 h-12 bg-purple-100 rounded-full flex items-center justify-center">
                   <span className="text-2xl">💰</span>
@@ -267,82 +269,157 @@
                     {editingBook ? 'Edit Book' : 'Add New Book'}
                   </h3>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <input
-                      type="text"
-                      placeholder="Title *"
-                      value={bookForm.title}
-                      onChange={(e) => setBookForm({ ...bookForm, title: e.target.value })}
-                      className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                      required
-                    />
-                    <input
-                      type="text"
-                      placeholder="Author *"
-                      value={bookForm.author}
-                      onChange={(e) => setBookForm({ ...bookForm, author: e.target.value })}
-                      className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                      required
-                    />
-                    <input
-                      type="number"
-                      placeholder="Price *"
-                      value={bookForm.price}
-                      onChange={(e) => setBookForm({ ...bookForm, price: parseFloat(e.target.value) || 0 })}
-                      className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                      min="0"
-                      step="0.01"
-                      required
-                    />
-                    {/* ✅ Category Dropdown */}
-                    <div className="flex flex-col gap-1">
-                      <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide">
-                        Category <span className="text-red-400">*</span>
-                      </label>
-                      <select
-                        value={bookForm.category || ''}
-                        onChange={(e) => setBookForm({ ...bookForm, category: e.target.value })}
-                        className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white cursor-pointer"
-                        required
-                      >
-                        <option value="" disabled>▼ Select a category…</option>
-                        {CATEGORIES.map((cat) => (
-                          <option key={cat} value={cat}>{cat}</option>
-                        ))}
-                      </select>
-                    </div>
-                    <input
-                      type="number"
-                      placeholder="Stock *"
-                      value={bookForm.stock}
-                      onChange={(e) => setBookForm({ ...bookForm, stock: parseInt(e.target.value) || 0 })}
-                      className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                      min="0"
-                      required
-                    />
-                    <input
-                      type="url"
-                      placeholder="Image URL *"
-                      value={bookForm.image}
-                      onChange={(e) => setBookForm({ ...bookForm, image: e.target.value })}
-                      className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                      required
-                    />
-                    <textarea
-                      placeholder="Description *"
-                      value={bookForm.description}
-                      onChange={(e) => setBookForm({ ...bookForm, description: e.target.value })}
-                      className="md:col-span-2 px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                      rows={3}
-                      required
-                    />
-                    <input
-                      type="date"
-                      placeholder="Published Date"
-                      value={bookForm.publishedDate}
-                      onChange={(e) => setBookForm({ ...bookForm, publishedDate: e.target.value })}
-                      className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                    />
-                  </div>
+  
+  {/* Title */}
+  <div className="flex flex-col gap-1">
+    <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide">
+      Title <span className="text-red-400">*</span>
+    </label>
+    <input
+      type="text"
+      placeholder="e.g. The Great Gatsby"
+      value={bookForm.title}
+      onChange={(e) => setBookForm({ ...bookForm, title: e.target.value })}
+      className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+    />
+  </div>
+
+  {/* Author */}
+  <div className="flex flex-col gap-1">
+    <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide">
+      Author <span className="text-red-400">*</span>
+    </label>
+    <input
+      type="text"
+      placeholder="e.g. F. Scott Fitzgerald"
+      value={bookForm.author}
+      onChange={(e) => setBookForm({ ...bookForm, author: e.target.value })}
+      className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+    />
+  </div>
+
+  {/* Price */}
+  <div className="flex flex-col gap-1">
+    <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide">
+      Price <span className="text-red-400">*</span>
+    </label>
+    <div className="flex items-center border border-gray-300 rounded-lg overflow-hidden focus-within:ring-2 focus-within:ring-indigo-500">
+      <span className="px-3 py-2 bg-gray-100 text-gray-600 text-sm font-medium border-r border-gray-300 whitespace-nowrap">
+        NRs.
+      </span>
+      <input
+        type="number"
+        placeholder="0.00"
+        value={bookForm.price}
+        onChange={(e) => setBookForm({ ...bookForm, price: parseFloat(e.target.value) || 0 })}
+        className="flex-1 px-4 py-2 focus:outline-none"
+        min="0"
+        step="0.01"
+      />
+    </div>
+  </div>
+
+  {/* Category */}
+  <div className="flex flex-col gap-1">
+    <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide">
+      Category <span className="text-red-400">*</span>
+    </label>
+    <select
+      value={bookForm.category || ''}
+      onChange={(e) => setBookForm({ ...bookForm, category: e.target.value })}
+      className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white cursor-pointer"
+    >
+      <option value="" disabled>Select a category…</option>
+      {CATEGORIES.map((cat) => (
+        <option key={cat} value={cat}>{cat}</option>
+      ))}
+    </select>
+  </div>
+
+  {/* Stock */}
+  <div className="flex flex-col gap-1">
+    <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide">
+      Stock <span className="text-red-400">*</span>
+    </label>
+    <div className="flex items-center border border-gray-300 rounded-lg overflow-hidden focus-within:ring-2 focus-within:ring-indigo-500">
+      <span className="px-3 py-2 bg-gray-100 text-gray-600 text-sm font-medium border-r border-gray-300 whitespace-nowrap">
+        Qty
+      </span>
+      <input
+        type="number"
+        placeholder="0"
+        value={bookForm.stock}
+        onChange={(e) => setBookForm({ ...bookForm, stock: parseInt(e.target.value) || 0 })}
+        className="flex-1 px-4 py-2 focus:outline-none"
+        min="0"
+      />
+    </div>
+  </div>
+
+  {/* Image URL */}
+  <div className="flex flex-col gap-1">
+    <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide">
+      Image URL <span className="text-red-400">*</span>
+    </label>
+    <input
+      type="url"
+      placeholder="https://example.com/image.jpg"
+      value={bookForm.image}
+      onChange={(e) => setBookForm({ ...bookForm, image: e.target.value })}
+      className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+    />
+  </div>
+
+  {/* Description */}
+  <div className="flex flex-col gap-1 md:col-span-2">
+    <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide">
+      Description <span className="text-red-400">*</span>
+    </label>
+    <textarea
+      placeholder="Write a short description of the book…"
+      value={bookForm.description}
+      onChange={(e) => setBookForm({ ...bookForm, description: e.target.value })}
+      className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+      rows={3}
+    />
+  </div>
+
+  {/* Published Date */}
+  <div className="flex flex-col gap-1">
+    <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide">
+      Published Date
+    </label>
+    <input
+      type="date"
+      value={bookForm.publishedDate}
+      onChange={(e) => setBookForm({ ...bookForm, publishedDate: e.target.value })}
+      className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+    />
+  </div>
+
+  {/* Featured Toggle */}
+  <div className="flex flex-col gap-1 justify-end">
+    <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">
+      Featured Book
+    </label>
+    <label className="flex items-center gap-3 cursor-pointer px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
+      <div className="relative">
+        <input
+          type="checkbox"
+          checked={bookForm.featured || false}
+          onChange={(e) => setBookForm({ ...bookForm, featured: e.target.checked })}
+          className="sr-only"
+        />
+        <div className={`w-10 h-6 rounded-full transition-colors ${bookForm.featured ? 'bg-indigo-600' : 'bg-gray-300'}`} />
+        <div className={`absolute top-1 left-1 w-4 h-4 bg-white rounded-full shadow transition-transform ${bookForm.featured ? 'translate-x-4' : 'translate-x-0'}`} />
+      </div>
+      <span className="text-sm text-gray-700">
+        {bookForm.featured ? 'Yes, show in featured section' : 'No, regular listing only'}
+      </span>
+    </label>
+  </div>
+
+</div>
                   <div className="flex gap-2 mt-4">
                     <button
                       onClick={handleSaveBook}
@@ -397,7 +474,7 @@
                             {book.category}
                           </span>
                         </td>
-                        <td className="px-6 py-4 text-sm font-medium text-gray-900">${book.price.toFixed(2)}</td>
+                        <td className="px-6 py-4 text-sm font-medium text-gray-900">Nrs.{book.price.toFixed(2)}</td>
                         <td className="px-6 py-4 text-sm text-gray-700">
                           <span className={book.stock > 10 ? 'text-green-600' : book.stock > 0 ? 'text-yellow-600' : 'text-red-600'}>
                             {book.stock}
@@ -453,14 +530,23 @@
                   </thead>
                   <tbody className="bg-white divide-y divide-gray-200">
                     {orders.map((order: Order) => {
-                      const customer = users.find((u: User) => u.id === order.userId);
+                      // order.userId is a populated object from backend, use it directly
+                      const customer = typeof order.userId === 'object' 
+                        ? order.userId as unknown as { _id: string; name: string; email: string }
+                        : null;
                       
                       return (
                         <tr key={order.id} className="hover:bg-gray-50">
                           <td className="px-6 py-4 text-sm font-mono text-gray-900">{order.id}</td>
-                          <td className="px-6 py-4 text-sm text-gray-700">{customer?.name || 'Unknown'}</td>
+                          <td className="px-6 py-4 text-sm text-gray-700">
+                            <div className="flex flex-col">
+                              <span className="font-medium text-gray-900">{customer?.name || 'Unknown'}</span>
+                              <span className="text-xs text-gray-500">{customer?.email || 'No email'}</span>
+                            </div>
+                          </td>
+
                           <td className="px-6 py-4 text-sm text-gray-700">{order.date}</td>
-                          <td className="px-6 py-4 text-sm font-medium text-gray-900">${order.total.toFixed(2)}</td>
+                          <td className="px-6 py-4 text-sm font-medium text-gray-900">NRs.{order.total.toFixed(2)}</td>
                           <td className="px-6 py-4 text-sm text-gray-700 capitalize">{order.paymentMethod}</td>
                           <td className="px-6 py-4">
                             <select
