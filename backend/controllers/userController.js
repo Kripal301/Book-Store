@@ -115,3 +115,35 @@ exports.deleteUser = async (req, res) => {
     res.status(500).json({ success: false, message: error.message });
   }
 };
+
+exports.updateMyProfile = async (req, res) => {
+  try {
+    const { name, address, phone } = req.body;
+    
+    // Only allow updating these fields - email is intentionally excluded
+    const user = await User.findByIdAndUpdate(
+      req.user.id, // Use authenticated user's ID, not from params
+      { name, address, phone },
+      { new: true, runValidators: true }
+    ).select('-password');
+    
+    if (!user) {
+      return res.status(404).json({ success: false, message: 'User not found' });
+    }
+    
+    res.json({
+      success: true,
+      user: {
+        id: user._id,
+        name: user.name,
+        email: user.email, // Return email but it wasn't updated
+        isAdmin: user.isAdmin,
+        address: user.address,
+        phone: user.phone,
+      }
+    });
+  } catch (error) {
+    console.error('Update profile error:', error);
+    res.status(500).json({ success: false, message: error.message });
+  }
+};

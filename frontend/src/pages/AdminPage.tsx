@@ -7,6 +7,19 @@
   interface AdminPageProps {
     onNavigate: (page: string) => void;
   }
+  const formatDate = (dateInput: string | Date | undefined | null): string => {
+  if (!dateInput) return 'N/A';
+  
+  const date = new Date(dateInput);
+  if (isNaN(date.getTime())) return 'Invalid Date';
+  
+  // Format as YYYY-MM-DD
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  
+  return `${year}-${month}-${day}`;
+  };
 
   
 
@@ -105,7 +118,8 @@
             stock: requiredFields.stock,
             rating: 0,  // Backend doesn't validate this field
             reviews: [], // Backend doesn't validate this field
-            publishedDate: requiredFields.publishedDate
+            publishedDate: requiredFields.publishedDate,
+            featured: bookForm.featured ?? false
           };
           
           console.log('🔍 Sending book data:', newBookData); // 🔴 Debug log
@@ -156,11 +170,13 @@
 
     // ✅ Stats calculation
     const stats = {
-      totalBooks: books.length,
-      totalOrders: orders.length,
-      totalCustomers: users.filter((u: User) => !u.isAdmin).length,
-      totalRevenue: orders.reduce((sum: number, order: Order) => sum + order.total, 0)
-    };
+  totalBooks: books.length,
+  totalOrders: orders.length,
+  totalCustomers: users.filter((u: User) => !u.isAdmin).length,
+  totalRevenue: orders
+    .filter((order: Order) => order.status === 'delivered')
+    .reduce((sum: number, order: Order) => sum + order.total, 0)
+};
 
     return (
       <div className="min-h-screen bg-gray-50 py-12">
@@ -198,7 +214,6 @@
                 <Users className="w-12 h-12 text-blue-600 opacity-50" />
               </div>
             </div>
-
             <div className="bg-white rounded-lg shadow-sm p-6">
               <div className="flex items-center justify-between">
                 <div>
@@ -522,6 +537,7 @@
                     <tr>
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Order ID</th>
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Customer</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Books Ordered</th>
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Total</th>
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Payment</th>
@@ -538,14 +554,40 @@
                       return (
                         <tr key={order.id} className="hover:bg-gray-50">
                           <td className="px-6 py-4 text-sm font-mono text-gray-900">{order.id}</td>
-                          <td className="px-6 py-4 text-sm text-gray-700">
+
+                          <td className="px-6 py-4">
                             <div className="flex flex-col">
-                              <span className="font-medium text-gray-900">{customer?.name || 'Unknown'}</span>
+                              <span className="text-sm font-medium text-gray-900">{customer?.name || 'Unknown'}</span>
                               <span className="text-xs text-gray-500">{customer?.email || 'No email'}</span>
                             </div>
                           </td>
+                          {/* ✅ NEW - Books Ordered */}
+                            <td className="px-6 py-4">
+                              <div className="flex flex-col gap-2">
+                                {order.items.map((item, index) => (
+                                  <div key={index} className="flex items-center gap-2">
+                                    <img
+                                      src={item.image}
+                                      alt={item.title}
+                                      className="w-8 h-11 object-cover rounded shadow-sm flex-shrink-0"
+                                      onError={(e) => {
+                                        (e.currentTarget as HTMLImageElement).src = 'https://placehold.co/32x44?text=N/A';
+                                      }}
+                                    />
+                                    <div className="flex flex-col min-w-0">
+                                      <span className="text-xs font-medium text-gray-900 truncate max-w-[140px]">
+                                        {item.title}
+                                      </span>
+                                      <span className="text-xs text-gray-500">
+                                        x{item.quantity} · NRs.{((item.price ?? 0) * item.quantity).toFixed(2)}
+                                      </span>
+                                    </div>
+                                  </div>
+                                ))}
+                              </div>
+                            </td>
 
-                          <td className="px-6 py-4 text-sm text-gray-700">{order.date}</td>
+                          <td className="px-6 py-4 text-sm text-gray-700">{formatDate(order.date)}</td>
                           <td className="px-6 py-4 text-sm font-medium text-gray-900">NRs.{order.total.toFixed(2)}</td>
                           <td className="px-6 py-4 text-sm text-gray-700 capitalize">{order.paymentMethod}</td>
                           <td className="px-6 py-4">
@@ -591,7 +633,12 @@
                     {users
                       .filter((u: User) => !u.isAdmin)
                       .map((user: User) => {
-                        const userOrdersCount = orders.filter((o: Order) => o.userId === user.id).length;
+                        const userOrdersCount = orders.filter((o: Order) => {
+                            const orderId = typeof o.userId === 'object' 
+                              ? (o.userId as any)._id?.toString() 
+                              : o.userId?.toString();
+                            return orderId === user.id?.toString();
+                          }).length;
                         
                         return (
                           <tr key={user.id} className="hover:bg-gray-50">

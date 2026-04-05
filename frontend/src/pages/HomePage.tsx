@@ -25,9 +25,7 @@ export const HomePage = ({ onNavigate }: HomePageProps) => {
     .slice(0, 4);
 
   // Get featured books (highest rated)
-  const featuredBooks = [...books]
-    .sort((a, b) => b.rating - a.rating)
-    .slice(0, 4);
+  const featuredBooks = books.filter((book) => book.featured === true);
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -52,37 +50,8 @@ export const HomePage = ({ onNavigate }: HomePageProps) => {
         </div>
       </section>
 
-      {/* New Arrivals */}
-      <section className="py-16">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between mb-8">
-            <h2 className="text-3xl text-gray-900">
-              New Arrivals
-            </h2>
-            <button
-              onClick={() => onNavigate("books")}
-              className="text-indigo-600 hover:text-indigo-700"
-            >
-              View All →
-            </button>
-          </div>
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-            {newBooks.map((book) => (
-              <BookCard
-                key={book.id}
-                book={book}
-                onViewDetails={(id) =>
-                  onNavigate("book-details", id)
-                }
-              />
-            ))}
-          </div>
-        </div>
-      </section>
-
       {/* Featured Books */}
-      <section className="py-16 bg-white">
+      <section className="py-16">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between mb-8">
             <h2 className="text-3xl text-gray-900">
@@ -98,6 +67,35 @@ export const HomePage = ({ onNavigate }: HomePageProps) => {
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
             {featuredBooks.map((book) => (
+              <BookCard
+                key={book.id}
+                book={book}
+                onViewDetails={(id) =>
+                  onNavigate("book-details", id)
+                }
+              />
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* New Arrivals */}
+      <section className="py-16 bg-white">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex items-center justify-between mb-8">
+            <h2 className="text-3xl text-gray-900">
+              New Arrivals
+            </h2>
+            <button
+              onClick={() => onNavigate("books")}
+              className="text-indigo-600 hover:text-indigo-700"
+            >
+              View All →
+            </button>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+            {newBooks.map((book) => (
               <BookCard
                 key={book.id}
                 book={book}

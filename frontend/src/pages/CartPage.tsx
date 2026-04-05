@@ -90,10 +90,10 @@ export const CartPage = ({ onNavigate }: CartPageProps) => {
                       {/* Price */}
                       <div className="text-right">
                         <p className="text-xl text-indigo-600">
-                          ${(item.book.price * item.quantity).toFixed(2)}
+                          NRs.{(item.book.price * item.quantity).toFixed(2)}
                         </p>
                         <p className="text-sm text-gray-500">
-                          ${item.book.price.toFixed(2)} each
+                          NRs.{item.book.price.toFixed(2)} each
                         </p>
                       </div>
                     </div>
@@ -127,24 +127,24 @@ export const CartPage = ({ onNavigate }: CartPageProps) => {
               <div className="space-y-4 mb-6">
                 <div className="flex justify-between text-gray-700">
                   <span>Subtotal ({cart.reduce((sum, item) => sum + item.quantity, 0)} items)</span>
-                  <span>${subtotal.toFixed(2)}</span>
+                  <span>NRs{subtotal.toFixed(2)}</span>
                 </div>
 
                 <div className="flex justify-between text-gray-700">
                   <span>Shipping</span>
-                  <span>{shipping === 0 ? 'FREE' : `$${shipping.toFixed(2)}`}</span>
+                  <span>{shipping === 0 ? 'FREE' : `NRs.${shipping.toFixed(2)}`}</span>
                 </div>
 
                 {subtotal < 50 && (
                   <p className="text-sm text-gray-600 bg-blue-50 p-3 rounded">
-                    Add ${(50 - subtotal).toFixed(2)} more for free shipping!
+                    Add NRs.{(500 - subtotal).toFixed(2)} more for free shipping!
                   </p>
                 )}
 
                 <div className="border-t border-gray-200 pt-4">
                   <div className="flex justify-between text-xl">
                     <span className="text-gray-900">Total</span>
-                    <span className="text-indigo-600">${total.toFixed(2)}</span>
+                    <span className="text-indigo-600">NRs.{total.toFixed(2)}</span>
                   </div>
                 </div>
               </div>

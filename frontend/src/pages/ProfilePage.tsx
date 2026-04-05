@@ -9,9 +9,11 @@ interface ProfilePageProps {
 export const ProfilePage = ({ onNavigate }: ProfilePageProps) => {
   const { currentUser, updateProfile } = useApp();
   const [isEditing, setIsEditing] = useState(false);
+  
+  // 👇 Remove email from formData since it's not editable
   const [formData, setFormData] = useState({
     name: currentUser?.name || '',
-    email: currentUser?.email || '',
+    // email is read-only, not included in form state for submission
     address: currentUser?.address || '',
     phone: currentUser?.phone || ''
   });
@@ -33,19 +35,44 @@ export const ProfilePage = ({ onNavigate }: ProfilePageProps) => {
     );
   }
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    updateProfile(formData);
-    setIsEditing(false);
-    setSuccess('Profile updated successfully!');
-    setTimeout(() => setSuccess(''), 3000);
+    
+    try {
+      // 👇 Call your API endpoint for updating own profile
+      const response = await fetch('/api/users/profile', {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('token')}` // adjust based on your auth setup
+        },
+        body: JSON.stringify(formData) // email is NOT sent
+      });
+      
+      const data = await response.json();
+      
+      if (data.success) {
+        // Update local context/state with new profile data
+        updateProfile(data.user);
+        setIsEditing(false);
+        setSuccess('Profile updated successfully!');
+        setTimeout(() => setSuccess(''), 3000);
+      } else {
+        setSuccess(`Error: ${data.message}`);
+        setTimeout(() => setSuccess(''), 3000);
+      }
+    } catch (error) {
+      console.error('Update profile error:', error);
+      setSuccess('Failed to update profile');
+      setTimeout(() => setSuccess(''), 3000);
+    }
   };
 
   return (
     <div className="min-h-screen bg-gray-50 py-12">
       <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="bg-white rounded-lg shadow-md overflow-hidden">
-          {/* Header */}
+          {/* Header - unchanged */}
           <div className="bg-gradient-to-r from-indigo-600 to-purple-600 px-8 py-12 text-white">
             <div className="flex items-center gap-4">
               <div className="w-20 h-20 bg-white rounded-full flex items-center justify-center">
@@ -83,6 +110,7 @@ export const ProfilePage = ({ onNavigate }: ProfilePageProps) => {
 
             {isEditing ? (
               <form onSubmit={handleSubmit} className="space-y-6">
+                {/* Name Field - editable */}
                 <div>
                   <label className="block text-sm text-gray-700 mb-2">Full Name</label>
                   <div className="relative">
@@ -97,20 +125,21 @@ export const ProfilePage = ({ onNavigate }: ProfilePageProps) => {
                   </div>
                 </div>
 
+                {/* 👇 Email Field - READ ONLY */}
                 <div>
                   <label className="block text-sm text-gray-700 mb-2">Email Address</label>
                   <div className="relative">
                     <Mail className="absolute left-3 top-3 w-5 h-5 text-gray-400" />
                     <input
                       type="email"
-                      value={formData.email}
-                      onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                      className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                      required
+                      value={currentUser.email} // 👈 Use currentUser, not formData
+                      readOnly // 👈 Make it read-only
+                      className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg bg-gray-100 cursor-not-allowed"
                     />
                   </div>
                 </div>
 
+                {/* Phone Field - editable */}
                 <div>
                   <label className="block text-sm text-gray-700 mb-2">Phone Number</label>
                   <div className="relative">
@@ -125,6 +154,7 @@ export const ProfilePage = ({ onNavigate }: ProfilePageProps) => {
                   </div>
                 </div>
 
+                {/* Address Field - editable */}
                 <div>
                   <label className="block text-sm text-gray-700 mb-2">Address</label>
                   <div className="relative">
@@ -148,6 +178,7 @@ export const ProfilePage = ({ onNavigate }: ProfilePageProps) => {
                 </button>
               </form>
             ) : (
+              /* View mode - unchanged except email note */
               <div className="space-y-6">
                 <div className="flex items-start gap-3 py-4 border-b border-gray-200">
                   <User className="w-5 h-5 text-gray-400 mt-1" />
@@ -162,6 +193,7 @@ export const ProfilePage = ({ onNavigate }: ProfilePageProps) => {
                   <div>
                     <p className="text-sm text-gray-500">Email Address</p>
                     <p className="text-gray-900">{currentUser.email}</p>
+                    <p className="text-xs text-gray-400 mt-1">Contact support to change your email</p>
                   </div>
                 </div>
 

@@ -1,9 +1,11 @@
 import React, { useState } from 'react';
 import { MapPin, CreditCard, CheckCircle } from 'lucide-react';
 import { useApp } from '../context/AppContext'; 
+import { api } from '../services/api';
 interface CheckoutPageProps {
   onNavigate: (page: string) => void;
 }
+
 
 export const CheckoutPage = ({ onNavigate }: CheckoutPageProps) => {
   const { cart, currentUser, createOrder } = useApp();
@@ -38,9 +40,20 @@ export const CheckoutPage = ({ onNavigate }: CheckoutPageProps) => {
     return null;
   }
 
-  const handlePlaceOrder = () => {
-    createOrder(deliveryAddress, paymentMethod);
-    setOrderPlaced(true);
+  const handlePlaceOrder = async () => {
+    try {
+      // ✅ Save phone and address to user profile in DB
+      await api.put(`/users/${currentUser.id}`, {
+        phone,
+        address: deliveryAddress
+      });
+
+      await createOrder(deliveryAddress, paymentMethod);
+      setOrderPlaced(true);
+    } catch (err) {
+      console.error('Error placing order:', err);
+      window.alert('Failed to place order. Please try again.');
+    }
   };
 
   if (orderPlaced) {
@@ -290,7 +303,7 @@ export const CheckoutPage = ({ onNavigate }: CheckoutPageProps) => {
                             <p className="text-gray-900">{item.book.title}</p>
                             <p className="text-sm text-gray-600">Quantity: {item.quantity}</p>
                           </div>
-                          <p className="text-indigo-600">${(item.book.price * item.quantity).toFixed(2)}</p>
+                          <p className="text-indigo-600">NRs.{(item.book.price * item.quantity).toFixed(2)}</p>
                         </div>
                       ))}
                     </div>
@@ -323,18 +336,18 @@ export const CheckoutPage = ({ onNavigate }: CheckoutPageProps) => {
               <div className="space-y-4 mb-6">
                 <div className="flex justify-between text-gray-700">
                   <span>Subtotal</span>
-                  <span>${subtotal.toFixed(2)}</span>
+                  <span>NRs.{subtotal.toFixed(2)}</span>
                 </div>
 
                 <div className="flex justify-between text-gray-700">
                   <span>Shipping</span>
-                  <span>{shipping === 0 ? 'FREE' : `$${shipping.toFixed(2)}`}</span>
+                  <span>{shipping === 0 ? 'FREE' : `NRs.${shipping.toFixed(2)}`}</span>
                 </div>
 
                 <div className="border-t border-gray-200 pt-4">
                   <div className="flex justify-between text-xl">
                     <span className="text-gray-900">Total</span>
-                    <span className="text-indigo-600">${total.toFixed(2)}</span>
+                    <span className="text-indigo-600">NRs.{total.toFixed(2)}</span>
                   </div>
                 </div>
               </div>
