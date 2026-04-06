@@ -42,8 +42,8 @@ export const CheckoutPage = ({ onNavigate }: CheckoutPageProps) => {
 
   const handlePlaceOrder = async () => {
     try {
-      // ✅ Save phone and address to user profile in DB
-      await api.put(`/users/${currentUser.id}`, {
+      // ✅ Use /users/profile instead of /users/:id
+      await api.put('/users/profile', {
         phone,
         address: deliveryAddress
       });

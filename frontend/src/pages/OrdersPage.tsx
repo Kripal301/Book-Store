@@ -83,7 +83,7 @@
                         <span>•</span>
                         <span>{order.items.length} {order.items.length === 1 ? 'item' : 'items'}</span>
                         <span>•</span>
-                        <span className="text-indigo-600">Total: ${order.total.toFixed(2)}</span>
+                        <span className="text-indigo-600">Total: NRs.{order.total.toFixed(2)}</span>
                       </div>
                     </div>
                     {expandedOrder === order.id ? (
@@ -130,8 +130,8 @@
                               <p className="text-sm text-gray-600">Quantity: {item.quantity}</p>
                             </div>
                             <div className="text-right">
-                              <p className="text-indigo-600">${(item.price * item.quantity).toFixed(2)}</p>
-                              <p className="text-sm text-gray-500">${item.price.toFixed(2)} each</p>
+                              <p className="text-indigo-600">NRs.{(item.price * item.quantity).toFixed(2)}</p>
+                              <p className="text-sm text-gray-500">NRs.{item.price.toFixed(2)} each</p>
                             </div>
                           </div>
                         ))}

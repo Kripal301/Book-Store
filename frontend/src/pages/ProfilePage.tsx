@@ -2,6 +2,8 @@ import React, { useState } from 'react';
 import { User, Mail, MapPin, Phone, Save } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 
+import { api } from '../services/api';
+
 interface ProfilePageProps {
   onNavigate: (page: string) => void;
 }
@@ -35,38 +37,33 @@ export const ProfilePage = ({ onNavigate }: ProfilePageProps) => {
     );
   }
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    try {
-      // 👇 Call your API endpoint for updating own profile
-      const response = await fetch('/api/users/profile', {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('token')}` // adjust based on your auth setup
-        },
-        body: JSON.stringify(formData) // email is NOT sent
-      });
+    const handleSubmit = async (e: React.FormEvent) => {
+      e.preventDefault();
       
-      const data = await response.json();
-      
-      if (data.success) {
-        // Update local context/state with new profile data
-        updateProfile(data.user);
-        setIsEditing(false);
-        setSuccess('Profile updated successfully!');
-        setTimeout(() => setSuccess(''), 3000);
-      } else {
-        setSuccess(`Error: ${data.message}`);
+      try {
+        const response = await api.put<{ success: boolean; user: any }>('/users/profile', {
+          name: formData.name,
+          phone: formData.phone,
+          address: formData.address
+        });
+        
+        if (response.success) {
+          // ✅ Update currentUser in context so UI reflects changes immediately
+          updateProfile({
+            name: response.user.name,
+            phone: response.user.phone,
+            address: response.user.address
+          });
+          setIsEditing(false);
+          setSuccess('Profile updated successfully!');
+          setTimeout(() => setSuccess(''), 3000);
+        }
+      } catch (error: any) {
+        console.error('Update profile error:', error);
+        setSuccess(`Error: ${error.message || 'Failed to update profile'}`);
         setTimeout(() => setSuccess(''), 3000);
       }
-    } catch (error) {
-      console.error('Update profile error:', error);
-      setSuccess('Failed to update profile');
-      setTimeout(() => setSuccess(''), 3000);
-    }
-  };
+    };
 
   return (
     <div className="min-h-screen bg-gray-50 py-12">

@@ -144,8 +144,9 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   }, [logout]);
 
   const updateProfile = useCallback(async (updates: Partial<User>) => {
-    if (!currentUser) return;
-    setCurrentUser(prev => prev ? { ...prev, ...updates } : prev);
+  if (!currentUser) return;
+  // ✅ Update local state immediately so UI reflects changes
+  setCurrentUser(prev => prev ? { ...prev, ...updates } : prev);
   }, [currentUser]);
 
   // ========== CART ==========
