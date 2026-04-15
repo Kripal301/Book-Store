@@ -14,6 +14,7 @@ import { WishlistPage } from './pages/WishlistPage';
 import { CheckoutPage } from './pages/CheckoutPage';
 import { OrdersPage } from './pages/OrdersPage';
 import { AdminPage } from './pages/AdminPage';
+import { Toaster } from 'react-hot-toast';
 
 type Page = 'home' | 'books' | 'book-details' | 'login' | 'signup' | 'profile' | 'cart' | 'wishlist' | 'checkout' | 'orders' | 'admin';
 
@@ -36,6 +37,7 @@ export default function App() {
 
   return (
     <AppProvider>
+      <Toaster position="top-right" toastOptions={{ duration: 3000 }} />
       <div className="min-h-screen bg-gray-50">
         <Header 
           onNavigate={handleNavigate} 

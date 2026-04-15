@@ -29,7 +29,6 @@
         default: Date.now,
       },
     },
-    { _id: false }
   ); // Don't create _id for subdocuments
 
   const bookSchema = new mongoose.Schema(

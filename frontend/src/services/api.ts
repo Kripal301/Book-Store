@@ -47,7 +47,7 @@ const request = async <T>(
   const config: RequestInit = {
     ...options,
     headers: {
-      ...getHeaders(true),  // ✅ Add auth header
+      ...getHeaders(true),  
       ...options.headers,
     },
   };

@@ -390,3 +390,76 @@
       });
     }
   };
+
+exports.updateReview = async (req, res) => {
+  try {
+    const { rating, comment } = req.body;
+    const book = await Book.findById(req.params.id);
+
+    if (!book) {
+      return res.status(404).json({ success: false, message: 'Book not found' });
+    }
+
+    // ✅ Try finding by _id first, then fallback to userId match
+    const review = book.reviews.find(
+      r => r._id?.toString() === req.params.reviewId ||
+           r.userId?.toString() === req.params.reviewId
+    );
+
+    if (!review) {
+      return res.status(404).json({ success: false, message: 'Review not found' });
+    }
+
+    if (review.userId.toString() !== req.user._id.toString()) {
+      return res.status(403).json({ success: false, message: 'Not authorized to edit this review' });
+    }
+
+    review.rating = Number(rating);
+    review.comment = comment.trim();
+
+    await Book.calculateAverageRating(book._id);
+    await book.save();
+
+    const updatedBook = await Book.findById(req.params.id).select('-__v');
+    res.json({ success: true, message: 'Review updated successfully', book: updatedBook });
+  } catch (error) {
+    console.error('Update review error:', error);
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+exports.deleteReview = async (req, res) => {
+  try {
+    const book = await Book.findById(req.params.id);
+
+    if (!book) {
+      return res.status(404).json({ success: false, message: 'Book not found' });
+    }
+
+    // ✅ Try finding by _id first, then fallback to userId match
+    const reviewIndex = book.reviews.findIndex(
+      review => review._id?.toString() === req.params.reviewId ||
+                review.userId?.toString() === req.params.reviewId
+    );
+
+    if (reviewIndex === -1) {
+      return res.status(404).json({ success: false, message: 'Review not found' });
+    }
+
+    const review = book.reviews[reviewIndex];
+    const isOwner = review.userId.toString() === req.user._id.toString();
+
+    if (!isOwner && !req.user.isAdmin) {
+      return res.status(403).json({ success: false, message: 'Not authorized to delete this review' });
+    }
+
+    book.reviews.splice(reviewIndex, 1);
+    await Book.calculateAverageRating(book._id);
+    await book.save();
+
+    res.status(200).json({ success: true, message: 'Review deleted successfully' });
+  } catch (error) {
+    console.error('Delete review error:', error);
+    res.status(500).json({ success: false, message: error.message || 'Server error deleting review' });
+  }
+};

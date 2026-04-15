@@ -24,11 +24,14 @@ export interface BooksResponse {
 }
 
 // ✅ Helper: Map backend _id to frontend id
-const mapBook = (backendBook: any): Book => ({
-  ...backendBook,
-  id: backendBook._id,  // Map backend _id to frontend id
+const mapBook = (book: any) => ({
+  ...book,
+  id: book._id || book.id,
+  reviews: (book.reviews || []).map((r: any) => ({
+    ...r,
+    id: r._id?.toString() || r.id,  // ✅ map _id to id
+  }))
 });
-
 export const bookService = {
   getBooks: async (params?: BookQueryParams): Promise<BooksResponse> => {
     const queryString = params ? new URLSearchParams(

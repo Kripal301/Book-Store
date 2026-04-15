@@ -1,6 +1,6 @@
 
 export interface User {
-  id: string;              // ✅ Required - frontend ID (mapped from backend _id)
+  id: string;              
   name: string;
   email: string;
   isAdmin: boolean;
@@ -11,7 +11,7 @@ export interface User {
 }
 
 export interface Review {
-  id: string;              // ✅ Required - frontend ID (was _id?: string)
+  id: string;            
   userId: string;
   userName: string;
   rating: number;
@@ -20,7 +20,7 @@ export interface Review {
 }
 
 export interface Book {
-  id: string;              // ✅ Required - frontend ID (was _id: string)
+  id: string;              
   title: string;
   author: string;
   price: number;

@@ -8,7 +8,7 @@ interface CheckoutPageProps {
 
 
 export const CheckoutPage = ({ onNavigate }: CheckoutPageProps) => {
-  const { cart, currentUser, createOrder } = useApp();
+  const { cart, currentUser, createOrder, updateProfile } = useApp();
   const [step, setStep] = useState<'address' | 'payment' | 'confirm'>('address');
   const [deliveryAddress, setDeliveryAddress] = useState(currentUser?.address || '');
   const [phone, setPhone] = useState(currentUser?.phone || '');
@@ -41,20 +41,28 @@ export const CheckoutPage = ({ onNavigate }: CheckoutPageProps) => {
   }
 
   const handlePlaceOrder = async () => {
-    try {
-      // ✅ Use /users/profile instead of /users/:id
-      await api.put('/users/profile', {
-        phone,
-        address: deliveryAddress
-      });
+  try {
+    // ✅ Save phone and address to DB
+    const response = await api.put<{ success: boolean; user: any }>('/users/profile', {
+      phone,
+      address: deliveryAddress
+    });
 
-      await createOrder(deliveryAddress, paymentMethod);
-      setOrderPlaced(true);
-    } catch (err) {
-      console.error('Error placing order:', err);
-      window.alert('Failed to place order. Please try again.');
+    // ✅ Update local context so profile page reflects new data immediately
+    if (response.success) {
+      updateProfile({
+        phone: response.user.phone,
+        address: response.user.address
+      });
     }
-  };
+
+    await createOrder(deliveryAddress, paymentMethod);
+    setOrderPlaced(true);
+  } catch (err) {
+    console.error('Error placing order:', err);
+    window.alert('Failed to place order. Please try again.');
+  }
+};
 
   if (orderPlaced) {
     return (

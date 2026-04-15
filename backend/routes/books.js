@@ -7,7 +7,8 @@ const {
   updateBook,
   deleteBook,
   addReview,
-  deleteReview
+  deleteReview,
+  updateReview  
 } = require('../controllers/bookController');
 const { protect, admin } = require('../middleware/auth');
 
@@ -23,5 +24,6 @@ router.delete('/:id', protect, admin, deleteBook);
 // Protected routes (Authenticated users)
 router.post('/:id/reviews', protect, addReview);
 router.delete('/:id/reviews/:reviewId', protect, deleteReview);
+router.put('/:id/reviews/:reviewId', protect, updateReview);  
 
 module.exports = router;
