@@ -70,7 +70,7 @@ export const Navbar: React.FC<NavbarProps> = ({ searchQuery, onSearchChange }) =
         <div className="flex justify-between items-center h-16">
           <div className="flex items-center gap-2 cursor-pointer" onClick={() => handleNavigate('/')}>
             <BookOpen className="size-8 text-blue-600" />
-            <span className="text-blue-600 font-bold text-lg">BookMart</span>
+            <span className="text-blue-600 font-bold text-lg">BookMarts</span>
           </div>
 
           <div className="hidden md:flex flex-1 max-w-md mx-8">

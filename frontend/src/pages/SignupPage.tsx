@@ -1,6 +1,7 @@
-import React, { useState } from 'react';
-import { UserPlus, Mail, Lock, User as UserIcon } from 'lucide-react';
-import { useApp } from '../context/AppContext'; 
+import React, { useState } from "react";
+import { UserPlus, Mail, Lock, User as UserIcon } from "lucide-react";
+import toast from "react-hot-toast";
+import { useApp } from "../context/AppContext";
 
 interface SignupPageProps {
   onNavigate: (page: string) => void;
@@ -8,39 +9,40 @@ interface SignupPageProps {
 
 export const SignupPage = ({ onNavigate }: SignupPageProps) => {
   const { signup, loadingAuth } = useApp();
-  const [name, setName] = useState('');
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
-  const [error, setError] = useState('');
+  const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [error, setError] = useState("");
 
-  
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError('');
+    setError("");
 
     if (password !== confirmPassword) {
-      setError('Passwords do not match');
+      setError("Passwords do not match");
       return;
     }
 
     if (password.length < 6) {
-      setError('Password must be at least 6 characters');
+      setError("Password must be at least 6 characters");
       return;
     }
 
     try {
-      const success = await signup(name, email, password); // Now returns Promise
+      const success = await signup(name, email, password);
       if (success) {
-        onNavigate('home');
+        toast.success(`Welcome, ${name}! Your account has been created.`);
+        onNavigate("home");
       } else {
-        setError('Email already exists');
+        setError("Email already exists");
+        toast.error("Email already exists. Please try a different one.");
       }
     } catch (err: any) {
-      setError(err.message || 'Signup failed. Please try again.');
+      setError(err.message || "Signup failed. Please try again.");
+      toast.error(err.message || "Signup failed. Please try again.");
     }
   };
-
 
   return (
     <div className="min-h-screen bg-gray-50 flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
@@ -62,7 +64,10 @@ export const SignupPage = ({ onNavigate }: SignupPageProps) => {
 
           <form onSubmit={handleSubmit} className="space-y-6">
             <div>
-              <label htmlFor="name" className="block text-sm text-gray-700 mb-2">
+              <label
+                htmlFor="name"
+                className="block text-sm text-gray-700 mb-2"
+              >
                 Full Name
               </label>
               <div className="relative">
@@ -80,7 +85,10 @@ export const SignupPage = ({ onNavigate }: SignupPageProps) => {
             </div>
 
             <div>
-              <label htmlFor="email" className="block text-sm text-gray-700 mb-2">
+              <label
+                htmlFor="email"
+                className="block text-sm text-gray-700 mb-2"
+              >
                 Email Address
               </label>
               <div className="relative">
@@ -98,7 +106,10 @@ export const SignupPage = ({ onNavigate }: SignupPageProps) => {
             </div>
 
             <div>
-              <label htmlFor="password" className="block text-sm text-gray-700 mb-2">
+              <label
+                htmlFor="password"
+                className="block text-sm text-gray-700 mb-2"
+              >
                 Password
               </label>
               <div className="relative">
@@ -116,7 +127,10 @@ export const SignupPage = ({ onNavigate }: SignupPageProps) => {
             </div>
 
             <div>
-              <label htmlFor="confirmPassword" className="block text-sm text-gray-700 mb-2">
+              <label
+                htmlFor="confirmPassword"
+                className="block text-sm text-gray-700 mb-2"
+              >
                 Confirm Password
               </label>
               <div className="relative">
@@ -138,15 +152,15 @@ export const SignupPage = ({ onNavigate }: SignupPageProps) => {
               disabled={loadingAuth}
               className="... disabled:opacity-50"
             >
-              {loadingAuth ? 'Creating account...' : 'Create Account'}
+              {loadingAuth ? "Creating account..." : "Create Account"}
             </button>
           </form>
 
           <div className="mt-6 text-center">
             <p className="text-sm text-gray-600">
-              Already have an account?{' '}
+              Already have an account?{" "}
               <button
-                onClick={() => onNavigate('login')}
+                onClick={() => onNavigate("login")}
                 className="text-indigo-600 hover:text-indigo-700"
               >
                 Sign in

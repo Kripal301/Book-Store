@@ -31,9 +31,10 @@ export const Header = ({ onNavigate, currentPage, onSearch }: HeaderProps) => {
             className="flex items-center cursor-pointer"
             onClick={() => onNavigate('home')}
           >
-            <div className="text-indigo-600 mr-2">
-              <Package className="w-8 h-8" />
-            </div>
+          <img 
+            src="/BookMartLogo.png" 
+            className="h-10 w-auto"
+          />
             <span className="text-xl text-gray-900">BookMart</span>
           </div>
 

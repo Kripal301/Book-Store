@@ -347,10 +347,7 @@ export const CheckoutPage = ({ onNavigate }: CheckoutPageProps) => {
                   <span>NRs.{subtotal.toFixed(2)}</span>
                 </div>
 
-                <div className="flex justify-between text-gray-700">
-                  <span>Shipping</span>
-                  <span>{shipping === 0 ? 'FREE' : `NRs.${shipping.toFixed(2)}`}</span>
-                </div>
+                
 
                 <div className="border-t border-gray-200 pt-4">
                   <div className="flex justify-between text-xl">
